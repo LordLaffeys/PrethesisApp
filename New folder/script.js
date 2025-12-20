@@ -186,23 +186,16 @@ class StockChart {
     this.setRangeFromData();
     this.ctx.clearRect(0, 0, this.width, this.height);
 
-    // Compute total points from both series so grid/scale always matches actual data length.
-    // - stockData uses indices 0..(N-1)
-    // - predictionData uses explicit "time"
-    let totalPoints = Math.max(0, stockData.length);
-    if (predictionData.length) {
-      const maxPredT = Math.max(...predictionData.map((p) => p.time));
-      totalPoints = Math.max(totalPoints, maxPredT + 1);
-    }
-
-    // Fallback: if nothing loaded yet, show an empty grid with 25 points (20 + 5)
-    if (totalPoints < 2) totalPoints = 25;
+    const horizon = 5;
+    const totalPoints = stockData.length + horizon;
 
     this.drawGridLines(totalPoints);
 
+    const timeRange = Math.max(1, totalPoints - 1);
+
     if (this.mode === "candlestick") {
       stockData.forEach((d, idx) => {
-        const x = this.timeToX(idx, Math.max(1, totalPoints - 1));
+        const x = this.timeToX(idx, timeRange);
         this.drawCandlestick(d, x);
       });
     } else {
@@ -389,105 +382,11 @@ async function fetchInfer(ticker, scenario, model_type) {
 }
 
 async function fetchMetrics(ticker, scenario, model_type) {
-  const payload = { ticker };
-  if (scenario) payload.scenario = scenario;
-  if (model_type) payload.model_type = model_type;
-  return await postJSON(`${API_BASE}/metrics`, payload);
-}
-
-const metricsCache = new Map(); // ticker -> metrics rows
-
-async function getAllMetricsForTicker(ticker) {
-  if (metricsCache.has(ticker)) return metricsCache.get(ticker);
-  const met = await fetchMetrics(ticker); // ticker only (all rows)
-  const rows = met && Array.isArray(met.results) ? met.results : [];
-  metricsCache.set(ticker, rows);
-  return rows;
-}
-
-function renderTopDATable(rows) {
-  const table = document.getElementById("daTopTable");
-  if (!table) return;
-  const tbody = table.querySelector("tbody");
-  if (!tbody) return;
-
-  tbody.innerHTML = "";
-
-  const clean = Array.isArray(rows) ? rows : [];
-  if (!clean.length) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="4" class="muted">No DA metrics found for this stock.</td>`;
-    tbody.appendChild(tr);
-    return;
-  }
-
-  const top10 = clean
-    .slice()
-    .sort((a, b) => Number(b.DA) - Number(a.DA))
-    .slice(0, 10);
-
-  top10.forEach((r, i) => {
-    const tr = document.createElement("tr");
-    tr.dataset.scenario = r.scenario;
-    tr.dataset.model = r.model_type;
-
-    const daVal = typeof r.DA === "number" ? r.DA : Number(r.DA);
-    const daText = Number.isFinite(daVal) ? daVal.toFixed(2) : "-";
-
-    tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${r.scenario}</td>
-      <td>${r.model_type}</td>
-      <td>${daText}</td>
-    `;
-
-    // Click row to apply method + model
-    tr.addEventListener("click", () => {
-      const scenarioEl = document.getElementById("scenarioSelect");
-      const modelEl = document.getElementById("modelSelect");
-      if (!scenarioEl || !modelEl) return;
-
-      scenarioEl.value = r.scenario;
-      enforceModelRules();
-      modelEl.value = r.model_type;
-      updateTopDAHighlight();
-    });
-
-    tbody.appendChild(tr);
+  return await postJSON(`${API_BASE}/metrics`, {
+    ticker,
+    scenario,
+    model_type,
   });
-
-  updateTopDAHighlight();
-}
-
-function updateTopDAHighlight() {
-  const table = document.getElementById("daTopTable");
-  if (!table) return;
-  const scenario = document.getElementById("scenarioSelect")?.value;
-  const model = document.getElementById("modelSelect")?.value;
-
-  table.querySelectorAll("tbody tr").forEach((tr) => {
-    const s = tr.dataset.scenario;
-    const m = tr.dataset.model;
-    const active = s && m && s === scenario && m === model;
-    tr.classList.toggle("active", Boolean(active));
-  });
-}
-
-async function refreshTopDAForTicker(ticker) {
-  const table = document.getElementById("daTopTable");
-  if (!table) return;
-  const tbody = table.querySelector("tbody");
-  if (!tbody) return;
-
-  tbody.innerHTML = `<tr><td colspan="4" class="muted">Loading DA metrics…</td></tr>`;
-
-  try {
-    const rows = await getAllMetricsForTicker(ticker);
-    renderTopDATable(rows);
-  } catch (e) {
-    console.error("Failed to load DA table:", e);
-    tbody.innerHTML = `<tr><td colspan="4" class="muted">Failed to load DA metrics.</td></tr>`;
-  }
 }
 
 // ------------------------
@@ -508,61 +407,6 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("scenarioSelect").addEventListener("change", () => {
     enforceModelRules();
   });
-  document.getElementById("scenarioSelect").addEventListener("change", () => {
-    updateTopDAHighlight();
-  });
-  document.getElementById("modelSelect").addEventListener("change", () => {
-    updateTopDAHighlight();
-  });
-
-  // Load Top 10 DA table on stock change (and on initial load)
-  document.getElementById("stockSymbol").addEventListener("change", async () => {
-    const ticker = document.getElementById("stockSymbol").value;
-    const headerStock = document.getElementById("headerStock");
-    if (headerStock) headerStock.textContent = ticker;
-    await refreshTopDAForTicker(ticker);
-  });
-
-  // initial load
-  const initialTicker = document.getElementById("stockSymbol").value;
-  refreshTopDAForTicker(initialTicker);
-
-  // Predict using best DA config from CSV
-  const btnBest = document.getElementById("btnPredictBest");
-  if (btnBest) {
-    btnBest.addEventListener("click", async () => {
-      const button = btnBest;
-      const originalText = button.textContent;
-      button.disabled = true;
-      button.textContent = "Choosing best model...";
-
-      try {
-        const ticker = document.getElementById("stockSymbol").value;
-        const rows = await getAllMetricsForTicker(ticker);
-        if (!rows || !rows.length) throw new Error("No DA metrics found for this stock.");
-
-        const best = rows.slice().sort((a, b) => Number(b.DA) - Number(a.DA))[0];
-
-        const scenarioEl = document.getElementById("scenarioSelect");
-        const modelEl = document.getElementById("modelSelect");
-
-        scenarioEl.value = best.scenario;
-        enforceModelRules();
-        modelEl.value = best.model_type;
-
-        updateTopDAHighlight();
-
-        document.getElementById("btnPredict").click();
-      } catch (e) {
-        console.error(e);
-        alert(`Error: ${e.message}`);
-      } finally {
-        button.disabled = false;
-        button.textContent = originalText;
-      }
-    });
-  }
-
 
   document.getElementById("chartTypeSelect").addEventListener("change", () => {
     chart.setMode(document.getElementById("chartTypeSelect").value);
@@ -669,21 +513,8 @@ document.addEventListener("DOMContentLoaded", function () {
       ohlc.forEach((d) => stockData.push(d));
 
       // align prediction times: last historical index is 19 (t), predictions start at 20 (+1)
-      // align prediction times:
-// - last historical index is (N-1) (t)
-// - add a BRIDGE point at t so the forecast line connects with the last actual close
-// - predictions start at (t+1)
       const baseT = Math.max(0, stockData.length - 1);
-      const lastActual = stockData.length ? Number(stockData[baseT].close) : null;
-
-      if (typeof lastActual === "number" && !Number.isNaN(lastActual)) {
-        // bridge point at t
-        predictionData.push({ time: baseT, price: lastActual });
-      }
-
-      predPrices.forEach((p, i) => {
-        predictionData.push({ time: baseT + (i + 1), price: p });
-      });
+      predPrices.forEach((p, i) => predictionData.push({ time: baseT + (i + 1), price: p }));
 
       chart.setMode(chartType);
       chart.render();
