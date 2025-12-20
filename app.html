@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indonesian Stock Market Predictions - App</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Indonesian Stock Market Predictions</h1>
+      <div class="stock-info">
+        <h2 id="headerStock">BBCA</h2>
+        <p class="date-range" id="headerRange">Last 20 days + 5-step forecast</p>
+      </div>
+    </header>
+
+    <div class="controls-panel">
+      <div class="control-section">
+        <h3>Stock Prediction Results</h3>
+
+        <div class="form-group">
+          <label>Select Stock Symbol</label>
+          <select id="stockSymbol">
+            <option value="BBCA">BBCA</option>
+            <option value="BBRI">BBRI</option>
+            <option value="BMRI">BMRI</option>
+            <option value="BBNI">BBNI</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Select Method</label>
+          <select id="scenarioSelect">
+            <option value="baseline">baseline</option>
+            <option value="simple">simple</option>
+            <option value="weighted">weighted</option>
+            <option value="majority">majority</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Select Model</label>
+          <select id="modelSelect">
+            <option value="LSTM">LSTM</option>
+            <option value="TCN">TCN</option>
+            <option value="SGA_LSTM">SGA_LSTM</option>
+          </select>
+          <small id="modelHint" style="opacity:0.8; display:block; margin-top:6px;"></small>
+        </div>
+
+        <div class="form-group">
+          <label>Chart Type</label>
+          <select id="chartTypeSelect">
+            <option value="candlestick" selected>Candlestick</option>
+            <option value="line">Line</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Data Window</label>
+          <input type="text" value="Last 20 days" disabled />
+        </div>
+
+        <div class="form-group">
+          <label>Prediction Horizon</label>
+          <input type="text" value="Next 5 steps" disabled />
+        </div>
+
+        <button class="show-prediction-btn" id="btnPredict">Show Prediction</button>
+      </div>
+
+      <div class="model-details">
+        <h3>Model Details</h3>
+        <ul>
+          <li>Prediction Horizon: <span id="horizonLabel">5 steps</span></li>
+          <li>Method: <span id="methodLabel">baseline</span></li>
+          <li>Model: <span id="modelLabel">LSTM</span></li>
+          <li>Directional Accuracy (DA): <span id="daLabel">-</span></li>
+        </ul>
+      </div>
+
+      <div class="disclaimer">
+        <h3>Disclaimer</h3>
+        <ul>
+          <li>Past performance is not indicative of future results.</li>
+          <li>This information is for educational purposes only. Consult a financial advisor.</li>
+        </ul>
+        <p class="copyright">© 2024 AI Stock Analytics</p>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <div class="price-indicator">
+        <div class="predicted-price">
+          <span class="price-label">Predicted Price (Step +5)</span>
+          <span class="price-value">-</span>
+        </div>
+        <div class="prediction-details" id="predictionDetails" style="display: none;">
+          <div class="detail-item">
+            <span class="detail-label">Direction:</span>
+            <span class="detail-value" id="directionValue">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Current Price:</span>
+            <span class="detail-value" id="currentPriceValue">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Confidence (DA):</span>
+            <span class="detail-value" id="confidenceValue">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-area">
+        <canvas id="stockChart" width="800" height="400"></canvas>
+        <div class="y-axis">
+          <div class="y-label" style="top: 0%">9</div>
+          <div class="y-label" style="top: 12.5%">8.5</div>
+          <div class="y-label" style="top: 25%">8</div>
+          <div class="y-label" style="top: 37.5%">7.5</div>
+          <div class="y-label" style="top: 50%">7</div>
+          <div class="y-label" style="top: 62.5%">6.5</div>
+          <div class="y-label" style="top: 75%">6</div>
+          <div class="y-label" style="top: 87.5%">5.5</div>
+          <div class="y-label" style="top: 100%">5</div>
+        </div>
+      </div>
+
+      <div class="x-axis">
+        <span>t-19</span><span>t-15</span><span>t-10</span><span>t-5</span><span>t</span>
+        <span>+1</span><span>+2</span><span>+3</span><span>+4</span><span>+5</span>
+      </div>
+
+      <div class="series-table" id="seriesTable"></div>
+    </div>
+  </div>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <h2>Predicting Stock Price...</h2>
+      <p>Analyzing data with AI model</p>
+      <div class="loading-steps">
+        <div class="loading-step active" id="step1">Fetching last 20 days</div>
+        <div class="loading-step" id="step2">Fetching model metrics</div>
+        <div class="loading-step" id="step3">Running inference (5-step)</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
