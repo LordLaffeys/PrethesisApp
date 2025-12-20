@@ -510,3 +510,65 @@ body {
 .muted {
     color: #777;
 }
+
+
+/* ===== Mobile layout: move predicted price + direction details to bottom ===== */
+@media (max-width: 768px) {
+  /* Re-order chart parts (chart -> x-axis -> indicator -> table) */
+  .chart-area { order: 1; margin: 12px 0; }
+  .x-axis { order: 2; padding: 8px 10px; font-size: 11px; }
+  .price-indicator { order: 3; }
+  .series-table { order: 4; }
+
+  /* Make indicator flow in layout (not overlay) */
+  .price-indicator {
+    position: static;      /* IMPORTANT: disables the top-right overlay */
+    top: auto;
+    right: auto;
+    left: auto;
+    bottom: auto;
+
+    width: 100%;
+    margin-top: 10px;
+    z-index: 1;
+
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* Compact “Predicted Price” card for mobile */
+  .predicted-price {
+    width: 100%;
+    min-width: 0;
+
+    flex-direction: row;            /* label left, value right */
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 10px 12px;
+  }
+
+  .price-label {
+    margin: 0;
+    font-size: 12px;
+  }
+
+  .price-value {
+    font-size: 20px; /* smaller so it fits */
+    line-height: 1.1;
+  }
+
+  /* Details card full width */
+  .prediction-details {
+    width: 100%;
+    min-width: 0;
+    margin-top: 0;
+    padding: 10px 12px;
+  }
+
+  .detail-item {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+}
