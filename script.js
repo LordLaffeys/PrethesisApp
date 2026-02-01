@@ -196,7 +196,7 @@ class StockChart {
     }
 
     // Fallback: if nothing loaded yet, show an empty grid with 25 points (20 + 5)
-    if (totalPoints < 2) totalPoints = 25;
+    if (totalPoints < 2) totalPoints = 35;
 
     this.drawGridLines(totalPoints);
 
@@ -271,10 +271,10 @@ function toOHLCFromCloses(closes) {
 }
 
 function addDaysISO(dateStr, days) {
-  // dateStr expected YYYY-MM-DD
-  const d = new Date(dateStr + "T00:00:00");
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const utc = new Date(Date.UTC(y, m - 1, d));
+  utc.setUTCDate(utc.getUTCDate() + days);
+  return utc.toISOString().slice(0, 10);
 }
 
 function updateHeader(ticker, recentDates, forecastDates) {
@@ -375,7 +375,7 @@ async function fetchRecent(ticker, scenario) {
   return await postJSON(`${API_BASE}/recent`, {
     ticker,
     scenario,
-    n_days: 20,
+    n_days: 30,
     return_type: "log",
   });
 }
@@ -622,7 +622,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const horizon = predPrices.length || 5;
 
       const lastDate = dates.length ? dates[dates.length - 1] : null;
-      const forecastDates = lastDate ? Array.from({ length: horizon }, (_, i) => addDaysISO(lastDate, i + 1)) : Array.from({ length: horizon }, (_, i) => `t+${i + 1}`);
+      const forecastDates = Array.from({ length: horizon }, (_, i) => addDaysISO(lastDate, i + 1));
 
       // Header + model details
       updateHeader(ticker, dates, forecastDates);

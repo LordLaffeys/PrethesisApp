@@ -31,7 +31,7 @@
           </select>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="display:none;">
           <label>Select Method</label>
           <select id="scenarioSelect">
             <option value="baseline">baseline</option>
@@ -41,7 +41,7 @@
           </select>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="display:none;">
           <label>Select Model</label>
           <select id="modelSelect">
             <option value="LSTM">LSTM</option>
@@ -51,17 +51,17 @@
           <small id="modelHint" style="opacity:0.8; display:block; margin-top:6px;"></small>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="display:none;">
           <label>Chart Type</label>
           <select id="chartTypeSelect">
-            <option value="candlestick" selected>Candlestick</option>
-            <option value="line">Line</option>
+            <option value="candlestick">Candlestick</option>
+            <option value="line" selected>Line</option>
           </select>
         </div>
 
         <div class="form-group">
           <label>Data Window</label>
-          <input type="text" value="Last 20 days" disabled />
+          <input type="text" value="Last 30 days" disabled />
         </div>
 
         <div class="form-group">
@@ -69,11 +69,11 @@
           <input type="text" value="Next 5 steps" disabled />
         </div>
 
-        <button class="show-prediction-btn" id="btnPredict">Show Prediction</button>
-        <button class="best-model-btn" id="btnPredictBest">Predict With Best Model</button>
+        <button class="show-prediction-btn" id="btnPredict" style="display:none;">Show Prediction</button>
+        <button class="best-model-btn" id="btnPredictBest">Show Prediction</button>
       </div>
 
-      <div class="da-table" id="daTablePanel">
+      <!-- <div class="da-table" id="daTablePanel">
         <h3>Top 10 Directional Accuracy</h3>
         <div class="da-table-wrapper">
           <table id="daTopTable">
@@ -92,7 +92,7 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </div> -->
 
 
       <div class="model-details">
@@ -104,6 +104,33 @@
           <li>Directional Accuracy (DA): <span id="daLabel">-</span></li>
         </ul>
       </div>
+
+      <div class="chart-instructions">
+        <h3>How to Read the Line Chart</h3>
+        <ul>
+          <li>
+            <strong>Black line</strong> shows the <b>historical closing prices</b>
+            over the last <b>30 trading days</b>.
+          </li>
+          <li>
+            <strong>Blue line</strong> represents the <b>model’s forecast</b>
+            for the next <b>5 future steps</b>.
+          </li>
+          <li>
+            The forecast line starts from the <b>last actual price</b>,
+            ensuring a continuous transition from historical data.
+          </li>
+          <li>
+            An <b>upward slope</b> indicates a predicted price increase,
+            while a <b>downward slope</b> indicates a predicted decrease.
+          </li>
+          <li>
+            <strong>Directional Accuracy (DA)</strong> reflects how often the model
+            correctly predicts price direction (up or down), not the exact value.
+          </li>
+        </ul>
+      </div>
+
 
       <div class="disclaimer">
         <h3>Disclaimer</h3>
@@ -153,7 +180,9 @@
       </div>
 
       <div class="x-axis">
-        <span>t-19</span><span>t-15</span><span>t-10</span><span>t-5</span><span>t</span>
+        <span>t-29</span><span>t-25</span><span>t-20</span>
+        <span>t-15</span><span>t-10</span><span>t-5</span>
+        <span>t</span>
         <span>+1</span><span>+2</span><span>+3</span><span>+4</span><span>+5</span>
       </div>
 
@@ -167,7 +196,7 @@
       <h2>Predicting Stock Price...</h2>
       <p>Analyzing data with AI model</p>
       <div class="loading-steps">
-        <div class="loading-step active" id="step1">Fetching last 20 days</div>
+        <div class="loading-step active" id="step1">Fetching last 30 days</div>
         <div class="loading-step" id="step2">Fetching model metrics</div>
         <div class="loading-step" id="step3">Running inference (5-step)</div>
       </div>
