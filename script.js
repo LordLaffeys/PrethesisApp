@@ -1,6 +1,6 @@
 // Frontend integration for FastAPI Stock Return Inference API
 // Uses endpoints:
-//   POST /recent   -> last 20 days (close + returns)
+//   POST /recent   -> last 30 days (close + returns)
 //   POST /infer    -> next 5-step predicted prices
 //   POST /metrics  -> directional accuracy table (DA)
 //
@@ -15,6 +15,7 @@ function buildHeaders() {
   if (API_KEY) h["X-API-Key"] = API_KEY;
   return h;
 }
+
 
 // Chart buffers (mutable)
 const stockData = [];      // OHLC derived from closes for candlesticks
@@ -346,6 +347,28 @@ function renderSeriesTable(recentDates, recentCloses, forecastDates, forecastPri
   `;
 }
 
+function renderXAxis(lookback, horizon) {
+  const xAxis = document.getElementById("xAxis");
+  if (!xAxis) return;
+  
+  xAxis.innerHTML = "";
+
+  const total = lookback + horizon;
+
+  for (let i = 0; i < total; i++) {
+    const span = document.createElement("span");
+
+    if (i < lookback) {
+      const offset = i - lookback;
+      span.textContent = offset === 0 ? "t" : `t${offset}`;
+    } else {
+      span.textContent = `+${i - lookback + 1}`;
+    }
+
+    xAxis.appendChild(span);
+  }
+}
+
 // ------------------------
 // API helpers
 // ------------------------
@@ -496,6 +519,9 @@ async function refreshTopDAForTicker(ticker) {
 document.addEventListener("DOMContentLoaded", function () {
   const chart = new StockChart("stockChart");
   chart.render();
+
+  // Initialize with default x-axis (30 historical + 5 forecast)
+  renderXAxis(30, 5);
 
   // Resize handler
   window.addEventListener("resize", function () {
@@ -668,11 +694,10 @@ document.addEventListener("DOMContentLoaded", function () {
       const ohlc = toOHLCFromCloses(closes);
       ohlc.forEach((d) => stockData.push(d));
 
-      // align prediction times: last historical index is 19 (t), predictions start at 20 (+1)
       // align prediction times:
-// - last historical index is (N-1) (t)
-// - add a BRIDGE point at t so the forecast line connects with the last actual close
-// - predictions start at (t+1)
+      // - last historical index is (N-1) (t)
+      // - add a BRIDGE point at t so the forecast line connects with the last actual close
+      // - predictions start at (t+1)
       const baseT = Math.max(0, stockData.length - 1);
       const lastActual = stockData.length ? Number(stockData[baseT].close) : null;
 
@@ -688,6 +713,9 @@ document.addEventListener("DOMContentLoaded", function () {
       chart.setMode(chartType);
       chart.render();
 
+      // Update X-axis labels based on actual data
+      renderXAxis(closes.length, predPrices.length);
+
       // Table: last 20 + forecast 5
       renderSeriesTable(dates, closes, forecastDates, predPrices);
     } catch (error) {
@@ -699,4 +727,5 @@ document.addEventListener("DOMContentLoaded", function () {
       button.textContent = originalText;
     }
   });
+
 });
