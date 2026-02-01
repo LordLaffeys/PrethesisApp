@@ -283,9 +283,9 @@ function updateHeader(ticker, recentDates, forecastDates) {
   if (Array.isArray(recentDates) && recentDates.length) {
     const start = recentDates[0];
     const end = (forecastDates && forecastDates.length) ? forecastDates[forecastDates.length - 1] : recentDates[recentDates.length - 1];
-    document.getElementById("headerRange").textContent = `${start} - ${end} (last 20 days + 5-step forecast)`;
+    document.getElementById("headerRange").textContent = `${start} - ${end} (last 30 days + 5-step forecast)`;
   } else {
-    document.getElementById("headerRange").textContent = "Last 20 days + 5-step forecast";
+    document.getElementById("headerRange").textContent = "Last 30 days + 5-step forecast";
   }
 }
 
